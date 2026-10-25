@@ -32,6 +32,7 @@ jobs:
           unzip -q code-atelier-complet.zip -d _site
           test -f _site/index.html || exit 1
           cp index.html _site/index.html
+          cp icon.svg apple-touch-icon.png manifest.webmanifest _site/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
