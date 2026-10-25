@@ -31,6 +31,7 @@ jobs:
           mkdir -p _site
           unzip -q code-atelier-complet.zip -d _site
           test -f _site/index.html || exit 1
+          cp index.html _site/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
