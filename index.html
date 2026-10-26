@@ -196,9 +196,7 @@ function completePracticeCode(){
  state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;
  save();
  if(feedback){feedback.textContent=message;feedback.className='feedback show'}
- runPractice();
 }
-
 function runPractice(){
  const p=currentPractice(),editor=document.getElementById('practiceEditor');
  if(!editor){return}
