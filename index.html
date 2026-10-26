@@ -142,29 +142,15 @@ function finishLesson(){renderModuleAssessment()}
 function currentPractice(){const html=state.challengeCourse==='html';const q=questions[state.q]||{},t=(q.title||'').toLowerCase();let starter=html?(q.example||q.code||''):(q.code||q.example||'');if(!html&&t.includes('variables'))starter='let score = 5;\nconsole.log(score);';if(!html&&t.includes('modifier une variable'))starter='let score = 5;\nscore = 8;\nconsole.log(score);';return {html,title:html?'Construis avec HTML et CSS':'Écris et exécute du JavaScript',prompt:html?'Le code de départ est fourni. Modifie-le progressivement pour appliquer la notion de cette leçon, puis ouvre l’aperçu.':'Le code de départ est fourni pour t’aider. Lis-le, puis clique sur « Exécuter / Aperçu ». Pour afficher une valeur, utilise console.log(nomDeLaVariable). Tu peux modifier le code et recommencer.',starter,check:html?/</.test.bind(/</):/./}}
 function renderPractice(){const p=currentPractice(),editor=document.getElementById('practiceEditor');if(!editor)return;const needsCoding=/écris|code|programme|crée|construis|complète|ajoute|modifie|implémente|développe|réalise|écris|implémenter|coder/i.test((questions[state.q]?.desc||'')+' '+(questions[state.q]?.title||''));const content=document.getElementById('practiceContent'),toggle=document.getElementById('togglePractice');content.style.display=needsCoding?'block':'none';toggle.style.display=needsCoding?'none':'block';toggle.setAttribute('aria-expanded',needsCoding?'true':'false');toggle.textContent=needsCoding?'Terminal ouvert':'Utiliser le terminal';document.getElementById('practiceType').textContent=p.html?'HTML + CSS · aperçu':'JavaScript · exécution';document.getElementById('practiceTitle').textContent=p.title;document.getElementById('practicePrompt').textContent=p.prompt;const key=lessonKey(state.challengeCourse,state.q);state.practiceDrafts=state.practiceDrafts||{};const savedDraft=Object.prototype.hasOwnProperty.call(state.practiceDrafts,key);editor.value=savedDraft?state.practiceDrafts[key]:(p.starter||'');if(!p.html&&/variables/i.test(p.title)&&!savedDraft&&editor.value.trim()==='let score = 5;')editor.value='let score = 5;\nconsole.log(score);';if(!editor.dataset.placeholderBound){editor.addEventListener('focus',()=>{if(editor.value.trim()==='// Écris ton code ici')editor.value=''});editor.addEventListener('pointerdown',()=>{if(editor.value.trim()==='// Écris ton code ici')editor.value=''});editor.dataset.placeholderBound='true'}document.getElementById('practiceFeedback').textContent='Écris ton code puis exécute-le ou vérifie-le. Tu peux corriger et réessayer.';document.getElementById('practiceFeedback').className='feedback show';document.getElementById('practicePreview').style.display='none'}
 function completePracticeCode(){
- const p=currentPractice(),editor=document.getElementById('practiceEditor'),feedback=document.getElementById('practiceFeedback'),q=questions[state.q]||{};
+ const editor=document.getElementById('practiceEditor'),feedback=document.getElementById('practiceFeedback');
  if(!editor)return;
- const topic=(q.title||'').toLowerCase();
- let code=p.starter||q.code||q.example||'';
- if(!p.html){
-  if(topic.includes('modifier une variable'))code='let score = 5;\nscore = 8;\nconsole.log(score);';
-  else if(topic.includes('variables')||topic.includes('types de valeurs')){
-   if(!code.trim())code='let age = 30;\nlet actif = true;';
-   if(!code.includes('console.log')){
-    const names=[];
-    const re=/\b(?:let|const|var)\s+([A-Za-z_$][\w$]*)/g;
-    let m;
-    while((m=re.exec(code))!==null)names.push(m[1]);
-    if(names.length)code+='\nconsole.log('+names.join(', ')+');';
-   }
-  }
-  if(!code.trim())code='console.log("Remplace cette ligne par ta réponse.");';
- }
- if(!code.trim()){if(feedback){feedback.textContent='Aucun exemple complet n’est disponible pour cette leçon.';feedback.className='feedback show'}return}
- editor.value=code;updatePracticeHighlight();
+ const code='console.log();';
+ editor.value=code;
+ updatePracticeHighlight();
  state.practiceDrafts=state.practiceDrafts||{};
- state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;save();
- if(feedback){feedback.textContent='Code complété pour cette leçon. Clique sur « Exécuter / Aperçu » pour voir le résultat.';feedback.className='feedback show'}
+ state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;
+ save();
+ if(feedback){feedback.textContent='Instruction console.log() ajoutée. Insère la valeur à afficher entre les parenthèses, puis clique sur « Exécuter / Aperçu ».';feedback.className='feedback show'}
 }
 function runPractice(){
   const p=currentPractice();
