@@ -160,7 +160,7 @@ function runPractice(){
   resultFrame.title='Exécution JavaScript';
   resultFrame.setAttribute('sandbox','allow-scripts');
   resultFrame.style.cssText='position:fixed;width:1px;height:1px;left:-10px;bottom:0;border:0;opacity:0;pointer-events:none';
-  const runnerStart='<html><body><pre id="out"></pre><script>const lines=[];console.log=(...args)=>lines.push(args.map(x=>{try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(e){return String(e)}}).join(" "));try{'+code+'}catch(e){lines.push("Erreur : "+e.name+": "+e.message)}parent.postMessage({type:"codews-terminal-result",lines:lines},"*");</scr';
+  const runnerStart='<html><body><pre id="out"></pre><script>const lines=[];console.log=(...args)=>lines.push(args.map(x=>{try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(e){return String(x)}}).join(" "));try{'+code+'}catch(e){lines.push("Erreur : "+e.name+": "+e.message)}parent.postMessage({type:"codews-terminal-result",lines:lines},"*");</scr';
   resultFrame.srcdoc=runnerStart+'ipt></body></html>';
   out.textContent='Exécution en cours…';
   let finished=false;
