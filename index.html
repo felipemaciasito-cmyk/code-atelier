@@ -144,13 +144,21 @@ function renderPractice(){const p=currentPractice(),editor=document.getElementBy
 function completePracticeCode(){
  const editor=document.getElementById('practiceEditor'),feedback=document.getElementById('practiceFeedback');
  if(!editor)return;
- const code='console.log();';
+ const addition='console.log();';
+ const current=editor.value||'';
+ const trimmed=current.trimEnd();
+ if(trimmed.includes('console.log(')){
+  if(feedback){feedback.textContent='Le code contient déjà console.log(). Complète ses parenthèses si nécessaire.';feedback.className='feedback show'}
+  return;
+ }
+ const separator=trimmed.length?'\n':'';
+ const code=trimmed+separator+addition;
  editor.value=code;
  updatePracticeHighlight();
  state.practiceDrafts=state.practiceDrafts||{};
  state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;
  save();
- if(feedback){feedback.textContent='Instruction console.log() ajoutée. Insère la valeur à afficher entre les parenthèses, puis clique sur « Exécuter / Aperçu ».';feedback.className='feedback show'}
+ if(feedback){feedback.textContent='console.log() a été ajouté à la suite de ton code. Complète les parenthèses puis exécute-le.';feedback.className='feedback show'}
 }
 function runPractice(){
   const p=currentPractice();
