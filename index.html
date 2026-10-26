@@ -138,14 +138,15 @@ function currentPractice(){const html=state.challengeCourse==='html';const q=que
 function renderPractice(){const p=currentPractice(),editor=document.getElementById('practiceEditor');if(!editor)return;const needsCoding=/écris|code|programme|crée|construis|complète|ajoute|modifie|implémente|développe|réalise|écris|implémenter|coder/i.test((questions[state.q]?.desc||'')+' '+(questions[state.q]?.title||''));const content=document.getElementById('practiceContent'),toggle=document.getElementById('togglePractice');content.style.display=needsCoding?'block':'none';toggle.style.display=needsCoding?'none':'block';toggle.setAttribute('aria-expanded',needsCoding?'true':'false');toggle.textContent=needsCoding?'Terminal ouvert':'Utiliser le terminal';document.getElementById('practiceType').textContent=p.html?'HTML + CSS · aperçu':'JavaScript · exécution';document.getElementById('practiceTitle').textContent=p.title;document.getElementById('practicePrompt').textContent=p.prompt;const key=lessonKey(state.challengeCourse,state.q);state.practiceDrafts=state.practiceDrafts||{};editor.value='';if(!p.html&&/variables/i.test(p.title)&&editor.value.trim()==='let score = 5;')editor.value='let score = 5;\nconsole.log(score);';if(!editor.dataset.placeholderBound){editor.addEventListener('focus',()=>{if(editor.value.trim()==='// Écris ton code ici')editor.value=''});editor.addEventListener('pointerdown',()=>{if(editor.value.trim()==='// Écris ton code ici')editor.value=''});editor.dataset.placeholderBound='true'}document.getElementById('practiceFeedback').textContent='Écris ton code puis exécute-le ou vérifie-le. Tu peux corriger et réessayer.';document.getElementById('practiceFeedback').className='feedback show';document.getElementById('practicePreview').style.display='none'}
 function runPractice(){
   const p=currentPractice();
-  const code=document.getElementById('practiceEditor').value;
+  const editor=document.getElementById('practiceEditor');
   const frame=document.getElementById('practicePreview');
   const out=document.getElementById('terminalOutput');
+  if(!editor||!out)return;
+  const code=editor.value;
   state.practiceDrafts=state.practiceDrafts||{};
   state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;
   save();
   openTerminal();
-  if(!out)return;
   if(p.html){
     const preview=document.createElement('iframe');
     preview.title='Aperçu HTML/CSS';
@@ -156,32 +157,30 @@ function runPractice(){
     if(frame)frame.srcdoc=preview.srcdoc;
     return;
   }
-  const resultFrame=document.createElement('iframe');
-  resultFrame.title='Exécution JavaScript';
-  resultFrame.setAttribute('sandbox','allow-scripts');
-  resultFrame.style.cssText='position:fixed;width:1px;height:1px;left:-10px;bottom:0;border:0;opacity:0;pointer-events:none';
-  const runnerStart='<html><body><pre id="out"></pre><script>const lines=[];console.log=(...args)=>lines.push(args.map(x=>{try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(e){return String(x)}}).join(" "));try{'+code+'}catch(e){lines.push("Erreur : "+e.name+": "+e.message)}parent.postMessage({type:"codews-terminal-result",lines:lines},"*");</scr';
-  resultFrame.srcdoc=runnerStart+'ipt></body></html>';
-  out.textContent='Exécution en cours…';
-  let finished=false;
-  const cleanup=()=>{window.removeEventListener('message',listener);resultFrame.remove();};
-  const listener=e=>{
-    if(e.source!==resultFrame.contentWindow||e.data?.type!=='codews-terminal-result')return;
-    finished=true;cleanup();
-    const lines=Array.isArray(e.data.lines)?e.data.lines:[];
-    out.textContent=lines.length?lines.join('\n'):'Code exécuté sans affichage. Ajoute console.log(...) pour afficher une valeur.';
-    if(lines.some(x=>String(x).startsWith('Erreur :'))){
-      out.innerHTML='<span class="output-error">'+escapeCodeHtml(out.textContent)+'</span>';
-    }
+  const lines=[];
+  const safeConsole={
+    log:(...args)=>lines.push(args.map(formatTerminalValue).join(' ')),
+    info:(...args)=>lines.push(args.map(formatTerminalValue).join(' ')),
+    warn:(...args)=>lines.push('Avertissement : '+args.map(formatTerminalValue).join(' ')),
+    error:(...args)=>lines.push('Erreur : '+args.map(formatTerminalValue).join(' ')),
+    table:(value)=>lines.push(formatTerminalValue(value))
   };
-  window.addEventListener('message',listener);
-  document.body.appendChild(resultFrame);
-  setTimeout(()=>{
-    if(!finished&&document.body.contains(resultFrame)){
-      cleanup();
-      out.textContent='Aucun résultat reçu. Vérifie le code et réessaie.';
-    }
-  },5000);
+  out.textContent='Exécution en cours…';
+  try{
+    const execute=new Function('console',code);
+    execute(safeConsole);
+    out.textContent=lines.length?lines.join('\n'):'Code exécuté sans affichage. Pour afficher une valeur, ajoute console.log(score);';
+  }catch(error){
+    out.textContent='Erreur : '+error.name+': '+error.message;
+    out.innerHTML='<span class="output-error">'+escapeCodeHtml(out.textContent)+'</span>';
+  }
+}
+function formatTerminalValue(value){
+  if(typeof value==='string')return value;
+  if(value===undefined)return 'undefined';
+  if(value===null)return 'null';
+  if(typeof value==='object'){try{return JSON.stringify(value)}catch(e){return String(value)}}
+  return String(value);
 }
 function checkPractice(){const p=currentPractice(),code=document.getElementById('practiceEditor').value,el=document.getElementById('practiceFeedback');state.practiceDrafts=state.practiceDrafts||{};state.practiceDrafts[lessonKey(state.challengeCourse,state.q)]=code;const topic=(questions[state.q]?.title||'').toLowerCase();let ok=false;if(p.html){const lower=code.toLowerCase();if(topic.includes('lien'))ok=/<a\b/.test(lower)&&/href\s*=/.test(lower);else if(topic.includes('image'))ok=/<img\b/.test(lower)&&/alt\s*=/.test(lower);else if(topic.includes('liste'))ok=/<li\b/.test(lower)&&/<ul\b|<ol\b/.test(lower);else if(topic.includes('flexbox'))ok=/display\s*:\s*flex/.test(lower);else if(topic.includes('grille'))ok=/display\s*:\s*grid/.test(lower);else if(topic.includes('responsive'))ok=/@media/.test(lower);else if(topic.includes('classe'))ok=/class\s*=/.test(lower)&&/\.[\w-]+\s*\{/.test(lower);else if(topic.includes('formulaire')||topic.includes('champ'))ok=/<input\b/.test(lower)&&/<label\b/.test(lower);else if(topic.includes('bouton'))ok=/<button\b/.test(lower);else ok=/<[a-z][\s\S]*>/i.test(code)}else{if(topic.includes('variable'))ok=/\b(let|const|var)\s+\w+/.test(code);else if(topic.includes('condition'))ok=/\bif\s*\(/.test(code);else if(topic.includes('boucle'))ok=/\b(for|while)\s*\(/.test(code);else if(topic.includes('fonction'))ok=/\bfunction\b|=>/.test(code);else if(topic.includes('tableau'))ok=/\[[\s\S]*\]/.test(code);else if(topic.includes('objet'))ok=/\{[\s\S]*:/.test(code);else if(topic.includes('json'))ok=/JSON\./.test(code);else if(topic.includes('dom')||topic.includes('sélectionne')||topic.includes('page'))ok=/document\./.test(code);else ok=/\S/.test(code)&&/console\.log|\breturn\b|=/.test(code)}if(ok){state.practicePassed=state.practicePassed||{};state.practicePassed[lessonKey(state.challengeCourse,state.q)]=true;el.textContent='Les critères de base de cet exercice sont présents. Exécute le code et vérifie aussi le résultat avant de continuer.';toast('Exercice vérifié')}else{el.textContent='Pas encore : certains éléments attendus manquent. Relis la consigne, corrige le code et réessaie.'}el.className='feedback show';save()}
 function getExerciseInstruction(q){const t=(q.title||'').toLowerCase();const html=state.challengeCourse==='html';if(html){if(t.includes('structure'))return 'Question : dans quelle partie du document HTML faut-il placer le contenu visible de la page ?';if(t.includes('titres et paragraphes'))return 'Question : quelle balise HTML faut-il utiliser pour écrire un paragraphe ?';if(t.includes('liens'))return 'Question : quel attribut indique l’adresse de destination d’un lien HTML ?';if(t.includes('images'))return 'Question : quel attribut fournit un texte alternatif décrivant une image ?';if(t.includes('listes'))return 'Question : quelles balises permettent de créer une liste à puces et ses éléments ?';if(t.includes('organiser une page'))return 'Question : quelle balise sémantique convient pour regrouper le contenu principal de la page ?';if(t.includes('formulaires'))return 'Question : quelle balise permet à l’utilisateur de saisir une information dans un formulaire ?';if(t.includes('boutons'))return 'Question : quelle balise crée un bouton interactif en HTML ?';if(t.includes('relier le css'))return 'Question : quelle balise relie une feuille de style CSS externe au document HTML ?';if(t.includes('sélecteurs'))return 'Question : quel sélecteur CSS cible tous les éléments portant la classe indiquée ?';if(t.includes('couleurs'))return 'Question : quelle propriété CSS permet de changer la couleur du texte ?';if(t.includes('tailles'))return 'Question : quelle unité CSS est relative à la taille de police de l’élément racine ?';if(t.includes('marges'))return 'Question : quelle propriété CSS crée un espace à l’extérieur de la bordure d’un élément ?';if(t.includes('modèle de boîte'))return 'Question : dans le modèle de boîte CSS, quelle zone se trouve entre le contenu et la bordure ?';if(t.includes('typographie'))return 'Question : quelle propriété CSS permet de modifier la taille des caractères ?';if(t.includes('classes et identifiants'))return 'Question : quel symbole CSS permet de cibler un identifiant HTML ?';if(t.includes('flexbox'))return 'Question : quelle déclaration CSS active Flexbox sur un conteneur ?';if(t.includes('grilles css'))return 'Question : quelle déclaration CSS active une mise en page en grille ?';if(t.includes('responsive'))return 'Question : quelle règle CSS permet d’adapter les styles selon la largeur de l’écran ?';if(t.includes('mini-projet'))return 'Consigne : construis une carte de profil avec une structure HTML claire et des styles CSS adaptés.';return 'Question : quelle réponse décrit correctement la fonction du code HTML ou CSS présenté ?'}if(t.includes('variables'))return 'Question : quelle valeur sera affichée après la dernière affectation de la variable ?';if(t.includes('types de valeurs'))return 'Question : que renvoie typeof 42 en JavaScript ?';if(t.includes('chaînes'))return 'Question : quel texte exact ce code affiche-t-il dans la console ?';if(t.includes('nombres')||t.includes('opérations'))return 'Question : quel résultat ce calcul JavaScript affiche-t-il dans la console ?';if(t.includes('comparer'))return 'Question : quelle valeur booléenne renvoie cette comparaison JavaScript ?';if(t.includes('conditions'))return 'Question : quelle branche de la condition est exécutée et quel résultat est affiché ?';if(t.includes('tableaux'))return 'Question : quel élément ou quelle valeur ce code extrait-il du tableau ?';if(t.includes('boucles'))return 'Question : combien de fois la boucle s’exécute-t-elle et quelle valeur affiche-t-elle ?';if(t.includes('fonction'))return 'Question : quelle valeur cette fonction renvoie-t-elle avec les arguments fournis ?';if(t.includes('paramètres'))return 'Question : quelle valeur la fonction renvoie-t-elle pour le paramètre donné ?';if(t.includes('portée'))return 'Question : quelle valeur est accessible à cet endroit du code ?';if(t.includes('objets'))return 'Question : quelle valeur cette propriété de l’objet contient-elle ?';if(t.includes('méthodes'))return 'Question : quel résultat renvoie cette méthode JavaScript ?';if(t.includes('fléchées'))return 'Question : quelle expression équivaut à cette fonction fléchée ?';if(t.includes('moderne'))return 'Question : quelle valeur produit cette syntaxe JavaScript moderne ?';if(t.includes('page web')||t.includes('dom'))return 'Question : quel élément de la page est sélectionné ou modifié par ce code ?';if(t.includes('événements'))return 'Question : que se passe-t-il lorsque l’événement indiqué se déclenche ?';if(t.includes('json'))return 'Question : quelle valeur obtient-on après avoir analysé cette chaîne JSON ?';if(t.includes('fetch')||t.includes('données'))return 'Question : quelle opération ce code effectue-t-il avec les données reçues ?';return 'Question : que produit ce code JavaScript ? Choisis la réponse exacte parmi les propositions.'}
