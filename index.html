@@ -23,6 +23,37 @@
 .syntax-editor .syntax-highlight{display:none!important;visibility:hidden!important}
 .syntax-editor textarea{background:#111216!important;color:#e6e6eb!important;-webkit-text-fill-color:#e6e6eb!important;caret-color:#ffb176!important;position:relative!important;z-index:2!important}
 .syntax-editor textarea::selection{-webkit-text-fill-color:#e6e6eb!important;background:#ffb17666!important}
+
+/* Apparence uniforme des éditeurs de code et terminaux de saisie */
+#practiceEditor,
+#moduleProjectEditor,
+#lessonChallengeBox textarea,
+textarea.code-editor,
+.syntax-editor textarea {
+  background: #0d0e12 !important;
+  color: #e6e6eb !important;
+  -webkit-text-fill-color: #e6e6eb !important;
+  caret-color: #ffb176 !important;
+  border: 1px solid #383a44 !important;
+  border-radius: 12px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  padding: 14px !important;
+  box-shadow: none !important;
+}
+#practiceEditor::placeholder,
+#moduleProjectEditor::placeholder,
+#lessonChallengeBox textarea::placeholder {
+  color: #8b8d98 !important;
+  -webkit-text-fill-color: #8b8d98 !important;
+}
+#practiceEditor::selection,
+#moduleProjectEditor::selection,
+#lessonChallengeBox textarea::selection {
+  background: #ffb17666 !important;
+  -webkit-text-fill-color: #e6e6eb !important;
+}
 </style>
 </head>
 <body>
